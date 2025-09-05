@@ -2,6 +2,7 @@ use crate::math::Vec3;
 use raylib::prelude::Color;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum Texture {
    None,
    Checker { scale: f32, a: Vec3, b: Vec3 },

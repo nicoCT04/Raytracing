@@ -3,6 +3,7 @@ use crate::texture::Texture;
 
 // Material ya NO es Copy (porque guarda una Texture)
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Material {
    pub albedo: Vec3,
    pub specular: f32,
@@ -27,6 +28,7 @@ impl Default for Material {
 
 // Guardamos un puntero solo-lectura al material para mantener Hit como Copy
 #[derive(Copy, Clone, Debug)]
+#[allow(dead_code)]
 pub struct Hit {
    pub t: f32,
    pub p: Vec3,

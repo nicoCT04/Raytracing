@@ -1,11 +1,13 @@
+// src/render.rs
 use crate::{math::Vec3, ray::Ray, material::Hit, scene::Scene, camera::OrbitCam};
+use crate::skybox::Skybox;              
 use raylib::prelude::*;
 
 pub const W: i32 = 320;
 pub const H: i32 = 180;
 pub const SCALE: i32 = 4;
 
-fn sky(dir: Vec3) -> Vec3 {
+fn sky_fallback(dir: Vec3) -> Vec3 {
    let t = 0.5 * (dir.y + 1.0);
    let top = Vec3::new(0.5, 0.7, 1.0);
    let bottom = Vec3::new(1.0, 1.0, 1.0);
@@ -13,7 +15,8 @@ fn sky(dir: Vec3) -> Vec3 {
 }
 
 fn shade(hit: &Hit, light_dir: Vec3) -> Vec3 {
-   let ambient = 0.05;
+   // subimos un poco el ambient
+   let ambient = 0.10;
    let n = hit.n.normalize();
    let l = light_dir.normalize();
    let diff = (n.dot(l)).max(0.0);
@@ -23,7 +26,6 @@ fn shade(hit: &Hit, light_dir: Vec3) -> Vec3 {
    let base = mat.albedo.hadamard(tex_color);
 
    let diffuse = base.mul(diff);
-
    let r = n.mul(2.0 * n.dot(l)).sub(l).normalize();
    let view_dir = Vec3::new(0.0, 0.0, 1.0);
    let spec = mat.specular * (r.dot(view_dir).max(0.0)).powf(32.0);
@@ -31,7 +33,8 @@ fn shade(hit: &Hit, light_dir: Vec3) -> Vec3 {
    diffuse.add(Vec3::new(spec, spec, spec)).add(base.mul(ambient))
 }
 
-pub fn render_scene(image: &mut Image, scene: &Scene, cam: &OrbitCam, world_angle: f32) {
+// Agregamos skybox: Option<&Skybox>
+pub fn render_scene(image: &mut Image, scene: &Scene, cam: &OrbitCam, world_angle: f32, sky: Option<&Skybox>) {
    let eye = cam.eye();
    let (fwd, right, up) = cam.basis();
    let aspect = (W as f32)/(H as f32);
@@ -47,7 +50,7 @@ pub fn render_scene(image: &mut Image, scene: &Scene, cam: &OrbitCam, world_angl
 
          let dir = fwd.add(right.mul(u*half_w)).add(up.mul(v*half_h)).normalize();
 
-         // Rotar el mundo (equivalente a rotar origen y dirección del rayo alrededor del target)
+         // Rotamos el mundo alrededor del target
          let center = cam.target;
          let origin_rel = eye.sub(center).rot_y(world_angle).add(center);
          let dir_rot = dir.rot_y(world_angle);
@@ -57,7 +60,11 @@ pub fn render_scene(image: &mut Image, scene: &Scene, cam: &OrbitCam, world_angl
          let rgb = if let Some(h) = scene.trace(ray, 0.001, 1e9) {
                shade(&h, light_dir).clamp01()
          } else {
-               sky(dir_rot).clamp01()
+               if let Some(sb) = sky {
+                  sb.sample_dir(dir_rot).clamp01()
+               } else {
+                  sky_fallback(dir_rot).clamp01()
+               }
          };
 
          let col = Color::new(
