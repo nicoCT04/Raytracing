@@ -1,7 +1,6 @@
 use crate::{math::Vec3, ray::Ray, material::{Material, Hit}};
 use super::Hittable;
 
-#[derive(Copy, Clone)]
 pub struct Plane { pub y: f32, pub mat: Material }
 
 impl Hittable for Plane {
@@ -11,7 +10,13 @@ impl Hittable for Plane {
       let t = (self.y - ray.origin.y) / denom;
       if t > tmin && t < tmax {
          let p = ray.at(t);
-         Some(Hit { t, p, n: Vec3::new(0.0,1.0,0.0), mat: self.mat })
+         let uv = (p.x, p.z); // UV infinitos (damero)
+         Some(Hit {
+               t, p,
+               n: Vec3::new(0.0, 1.0, 0.0),
+               mat_ptr: &self.mat as *const Material,
+               uv
+         })
       } else { None }
    }
 }

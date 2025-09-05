@@ -1,10 +1,11 @@
 use crate::math::Vec3;
 use raylib::prelude::Color;
 
+#[derive(Debug)]
 pub enum Texture {
    None,
    Checker { scale: f32, a: Vec3, b: Vec3 },
-   Image { width: i32, height: i32, pixels: Vec<Color> }, // opcional (a futuro)
+   Image { width: i32, height: i32, pixels: Vec<Color> }, 
 }
 
 impl Texture {

@@ -16,4 +16,12 @@ impl Vec3 {
       fn c(v:f32)->f32{ v.clamp(0.0,1.0) }
       Vec3::new(c(self.x), c(self.y), c(self.z))
    }
+   pub fn hadamard(self, o: Vec3) -> Vec3 {
+      Vec3::new(self.x * o.x, self.y * o.y, self.z * o.z)
+   }
+   pub fn rot_y(self, ang: f32) -> Vec3 {
+      let c = ang.cos(); let s = ang.sin();
+      Vec3::new(self.x * c + self.z * s, self.y, -self.x * s + self.z * c)
+   }
+
 }
