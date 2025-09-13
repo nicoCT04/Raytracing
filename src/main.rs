@@ -22,7 +22,7 @@ fn main() {
     // ----- Init ventana -----
     let (mut rl, th) = raylib::init()
         .size(W * SCALE, H * SCALE)
-        .title("Rust Raytracer — Difuso con kd")
+        .title("Rust Raytracer — Cubo con textura")
         .build();
     rl.set_target_fps(60);
 
@@ -36,10 +36,19 @@ fn main() {
         eprintln!("(info) No se encontró assets/sky.jpg — usando gradiente como fallback.");
     }
 
-    // ----- Escena base -----
-    let mut scene = scene::Scene::new(Vec3::new(-0.3, -1.0, -0.2));
+    // ===== CARGA TEXTURA DEL CUBO =====
+    let cube_texture = Texture::from_file("assets/cube.png")
+        .or_else(|| Texture::from_file("assets/crate.png"))
+        .unwrap_or(Texture::Checker {
+            scale: 4.0,
+            a: Vec3::new(0.85, 0.35, 0.35),
+            b: Vec3::new(0.25, 0.10, 0.10),
+        });
 
-    // Suelo (ligeramente difuso, con algo de especular)
+    // ----- Escena base -----
+    let mut scene = scene::Scene::new(Vec3::new(-0.3, -1.0, -0.2)); // luz direccional
+
+    // Suelo
     let plane_mat = Material {
         albedo: Vec3::new(1.0, 1.0, 1.0),
         kd: 0.9,
@@ -55,19 +64,15 @@ fn main() {
     };
     scene.add(Box::new(Plane { y: 0.0, mat: plane_mat }));
 
-    // Cubo 100% mate (solo difuso), más “presencia” difusa con kd
+    // Cubo con TEXTURA DE IMAGEN
     let cube_mat = Material {
         albedo: Vec3::new(1.0, 1.0, 1.0),
-        kd: 1.2,
-        specular: 0.0, // mate
+        kd: 1.0,
+        specular: 0.15,
         transparency: 0.0,
         reflectivity: 0.0,
         ior: 1.0,
-        texture: Texture::Checker {
-            scale: 4.0,
-            a: Vec3::new(0.85, 0.35, 0.35),
-            b: Vec3::new(0.25, 0.10, 0.10),
-        },
+        texture: cube_texture,
     };
     scene.add(Box::new(Cube {
         min: Vec3::new(-0.5, 0.5, -0.5),
@@ -87,9 +92,9 @@ fn main() {
     let mut autorotate = false;
     let mut world_angle = 0.0_f32;
 
-    // Difusa ambiental (IBL) — opcional
+    // Difusa ambiental (IBL)
     let mut env_on = true;
-    let mut env_samples: u32 = 4; // 0,2,4,8,16 recomendado
+    let mut env_samples: u32 = 4;
     let mut frame_id: u64 = 1;
 
     // ----- Loop -----
@@ -108,14 +113,8 @@ fn main() {
         if rl.is_key_pressed(KeyboardKey::KEY_R) { autorotate = !autorotate; }
         if autorotate { world_angle += (30.0_f32).to_radians() * dt; }
 
-        // Toggles IBL
+        // Toggle IBL (opcional)
         if rl.is_key_pressed(KeyboardKey::KEY_F) { env_on = !env_on; }
-        if rl.is_key_pressed(KeyboardKey::KEY_E) {
-            env_samples = (env_samples.saturating_mul(2)).min(16).max(1);
-        }
-        if rl.is_key_pressed(KeyboardKey::KEY_Q) {
-            env_samples = (env_samples / 2).min(16); // puede llegar a 0
-        }
 
         // Render
         let sky_ref = sky.as_ref();
@@ -145,8 +144,6 @@ fn main() {
             0.0,
             Color::WHITE
         );
-        d.draw_text("←/→ yaw, ↑/↓ pitch, rueda=zoom, R=rotar diorama", 8, 8, 16, Color::RAYWHITE);
-        d.draw_text(&format!("F=IBL {}  Q/E muestras={}  (kd controla difuso)",
-            if env_on { "ON" } else { "OFF" }, samples), 8, 28, 16, Color::RAYWHITE);
+        d.draw_text("R=rotar diorama | F=IBL on/off", 8, 8, 16, Color::RAYWHITE);
     }
 }
