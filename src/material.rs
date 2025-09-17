@@ -2,7 +2,7 @@ use crate::math::Vec3;
 use crate::texture::Texture;
 
 // Material no es Copy porque guarda Texture
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Material {
    pub albedo: Vec3,
    pub kd: f32,          // coeficiente difuso (Lambert)
