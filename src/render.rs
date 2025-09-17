@@ -30,7 +30,7 @@ fn miss_color(dir: Vec3, sky: Option<&Skybox>) -> Vec3 {
 fn local_shade(scene: &Scene, hit: &Hit, light_dir: Vec3, sky: Option<&Skybox>, rng: &mut Rng, env_samples: u32) -> Vec3 {
    let n = hit.n.normalize();
    let mat = hit.material();
-   let tex_color = mat.texture.sample(hit.uv);
+   let tex_color = mat.texture.sample_with_normal(hit.uv, hit.n);
    let base = mat.albedo.hadamard(tex_color);
 
    // Luz directa (Lambert + Phong), con sombras
