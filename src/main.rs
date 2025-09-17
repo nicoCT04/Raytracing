@@ -196,7 +196,7 @@ fn main() {
         [1, 2, 2, 2, 1],
     ];
     let base_y: i32 = 2; // altura de todo el bloque para que flote
-    let grass_thickness = 0.18; // mi “slab” superior (en unidades de bloque)
+    let grass_thickness = 0.50; // mi “slab” superior (en unidades de bloque)
 
     for gz in 0..5 {
         for gx in 0..5 {
@@ -227,6 +227,8 @@ fn main() {
     }
 
     // Columna de agua “cascada” al costado izquierdo de la meseta
+    let source_y = base_y + 2;         // un peldaño debajo del tope (según hmap actual)
+    add_block(&mut scene, -2, source_y, -1, mat_water.clone());
     for gy in base_y..(base_y + 3) {
         add_block(&mut scene, -3, gy, -1, mat_water.clone());
     }
@@ -235,19 +237,24 @@ fn main() {
     // Árbol sencillo: tronco de 3 bloques + copa 3×3 + 1 bloque extra arriba
     // Lo coloco sobre el “tile” central (0,0) de la isla
     // ----------------------------------------------------------------
-    let center_h = 4;                  // en mi hmap, el centro tiene altura 4
-    let top_y = base_y + center_h - 1; // y del bloque superior de esa columna
+    let tree_gx = 2;
+    let tree_gz = 0;
+    let tree_col_h = hmap[(tree_gz + 2) as usize][(tree_gx + 2) as usize]; // leo altura en esa celda
+    let tree_top_y = base_y + tree_col_h - 1;
 
+    // tronco de 3 bloques
     for i in 1..=3 {
-        add_block(&mut scene, 0, top_y + i, 0, mat_wood.clone());
+        add_block(&mut scene, tree_gx, tree_top_y + i, tree_gz, mat_wood.clone());
     }
-    let crown_y = top_y + 3;
+
+    // copa 3x3 alrededor del tope del tronco + tapa superior
+    let crown_y = tree_top_y + 3;
     for dz in -1..=1 {
         for dx in -1..=1 {
-            add_block(&mut scene, dx, crown_y, dz, mat_leaf.clone());
+            add_block(&mut scene, tree_gx + dx, crown_y, tree_gz + dz, mat_leaf.clone());
         }
     }
-    add_block(&mut scene, 0, crown_y + 1, 0, mat_leaf.clone());
+    add_block(&mut scene, tree_gx, crown_y + 1, tree_gz, mat_leaf.clone());
 
     // ----------------------------------------------------------------
     // Cámara: la alejo para que se aprecie completa y dejo rotación automática
