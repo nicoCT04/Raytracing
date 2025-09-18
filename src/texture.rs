@@ -5,29 +5,23 @@ use raylib::prelude::Color;
 pub enum Texture {
    None,
    Checker { scale: f32, a: Vec3, b: Vec3 },
-   Image   { width: i32, height: i32, pixels: Vec<Color> },
-   // Atlas para bloques: top / side / bottom
-   BlockAtlas {
-      top:   Box<Texture>,
-      side:  Box<Texture>,
-      bottom:Box<Texture>,
-   },
+   Image { width: i32, height: i32, pixels: Vec<Color> },
+   // Atlas de bloque: top / side / bottom
+   BlockAtlas { top: Box<Texture>, side: Box<Texture>, bottom: Box<Texture> },
 }
 
 impl Texture {
-   /// Muestréo normal (una sola textura)
+   /// Sampling normal (textura única)
    pub fn sample(&self, uv: (f32, f32)) -> Vec3 {
       self.sample_impl(uv)
    }
 
-   /// Muestréo eligiendo top/side/bottom según la normal (sin tocar cube.rs)
+   /// Sampling eligiendo top/side/bottom según la normal (n.y)
    pub fn sample_with_normal(&self, uv: (f32, f32), n: Vec3) -> Vec3 {
       match self {
          Texture::BlockAtlas { top, side, bottom } => {
-               // si la cara es "arriba/abajo" usamos top/bottom; si no, side
-               let ny = n.y;
-               let chosen = if ny > 0.5 { top.as_ref() }
-               else if ny < -0.5 { bottom.as_ref() }
+               let chosen = if n.y > 0.5 { top.as_ref() }
+               else if n.y < -0.5 { bottom.as_ref() }
                else { side.as_ref() };
                chosen.sample_impl(uv)
          }
@@ -58,7 +52,7 @@ impl Texture {
                let c = pixels[idx];
                Vec3::new(c.r as f32 / 255.0, c.g as f32 / 255.0, c.b as f32 / 255.0)
          }
-         Texture::BlockAtlas { .. } => unreachable!(), // desviado arriba
+         Texture::BlockAtlas { .. } => unreachable!(),
       }
    }
 
@@ -71,11 +65,10 @@ impl Texture {
       Some(Texture::Image { width, height, pixels: slice.to_vec() })
    }
 
-   /// Crea el atlas desde 3 archivos
    pub fn block_atlas_from_files(top: &str, side: &str, bottom: &str) -> Option<Self> {
       Some(Texture::BlockAtlas {
-         top:    Box::new(Texture::from_file(top)?),
-         side:   Box::new(Texture::from_file(side)?),
+         top: Box::new(Texture::from_file(top)?),
+         side: Box::new(Texture::from_file(side)?),
          bottom: Box::new(Texture::from_file(bottom)?),
       })
    }
