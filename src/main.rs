@@ -130,32 +130,56 @@ fn main() {
     add_block(&mut scene, tree_gx, crown_y + 1, tree_gz, mat_leaf.clone());
 
     // === Mini cueva colgante bajo la isla ===
-    // Bajamos 2–3 niveles y hacemos una cavidad de 3×2 con piedra, metemos TNT y diamantes.
-    let cave_y0 = base_y - 1; // techo de cueva
-    let cave_gx0 = -1;
-    let cave_gz0 = 1;
+    // Caja de 3×2×3 (x,z,y) justo bajo la isla, con 2 aperturas.
+    let top = base_y - 1;   // techo de la cueva
+    let height = 2;         // dos niveles hacia abajo (ligero)
+    let x0 = -1; let x1 = 1;
+    let z0 =  0; let z1 = 2;
 
-    // “muro”/volumen de piedra (3x2x2) con hueco central
-    for dz in 0..2 {
-        for dy in 0..2 {
-            for dx in 0..3 {
-                let gx = cave_gx0 + dx;
-                let gy = cave_y0 - dy; // hacia abajo
-                let gz = cave_gz0 + dz;
-                let is_hole = (dx == 1) && (dz == 0); // hueco frontal central
-                if !is_hole { add_block(&mut scene, gx, gy, gz, mat_stone.clone()); }
+    // Reservo DOS huecos en la pared trasera para diamantes
+    let diamond_slot_a = (x1, z1); // trasera derecha
+    let diamond_slot_b = (x0, z1); // trasera izquierda
+
+    // Muros/techo: solo perímetro. Aperturas:
+    // - frontal (z=z0) de 2 bloques ancho, 1 de alto (en el nivel inferior)
+    // - lateral izquierda (x=x0) 1×1 (ventana) en el nivel inferior
+    for dy in 0..height {
+        let gy = top - dy;
+        for gz in z0..=z1 {
+            for gx in x0..=x1 {
+                let edge = gx == x0 || gx == x1 || gz == z0 || gz == z1;
+                if !edge { continue; }
+
+                // Aperturas visibles:
+                let front_open = gz == z0 && (gx == 0 || gx == 1) && dy == 1;
+                let side_open  = gx == x0 && gz == 1 && dy == 1;
+
+                // Huecos para diamante (solo nivel inferior, dy==1)
+                let diamond_hole = dy == 1 && ((gx, gz) == diamond_slot_a || (gx, gz) == diamond_slot_b);
+
+                if front_open || side_open || diamond_hole { continue; }
+
+                add_block(&mut scene, gx, gy, gz, mat_stone.clone());
             }
         }
     }
-    // Un diamante incrustado al fondo y uno al lado
-    add_block(&mut scene, cave_gx0 + 2, cave_y0 - 1, cave_gz0 + 1, mat_diamond.clone());
-    add_block(&mut scene, cave_gx0,     cave_y0 - 1, cave_gz0 + 1, mat_diamond.clone());
 
-    // TNT en el hueco (visible)
-    add_block(&mut scene, cave_gx0 + 1, cave_y0 - 1, cave_gz0, mat_tnt.clone());
+    // Suelo (loseta completa en el nivel inferior)
+    for gz in (z0+1)..=(z1-1) {
+        for gx in (x0+1)..=(x1-1) {
+            add_block(&mut scene, gx, top - (height - 1), gz, mat_stone.clone());
+        }
+    }
+
+    // TNT en la entrada frontal (visible)
+    add_block(&mut scene, 0, top - 1, z0, mat_tnt.clone());
+
+    // Diamantes en los huecos de la pared trasera (ahora SIN piedra detrás)
+    add_block(&mut scene, diamond_slot_a.0, top - 1, diamond_slot_a.1, mat_diamond.clone());
+    add_block(&mut scene, diamond_slot_b.0, top - 1, diamond_slot_b.1, mat_diamond.clone());
 
     // Cámara
-    let mut cam = OrbitCam { target: Vec3::new(0.0, base_y as f32 + 2.0, 0.0), yaw: 0.9, pitch: -0.42, dist: 8.5, fov_deg: 60.0 };
+    let mut cam = OrbitCam { target: Vec3::new(0.0, base_y as f32 + 2.0, 0.0), yaw: 0.9, pitch: -0.50, dist: 9.2, fov_deg: 60.0 };
 
     let mut autorotate = true;
     let mut world_angle = 0.0_f32;
