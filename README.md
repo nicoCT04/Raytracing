@@ -95,4 +95,5 @@ cargo run
 
 ## Video
 
-Link to the video 
+[Link of the video](https://youtu.be/hy6L2I9vVtY)
+
